@@ -1,0 +1,228 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net471</TargetFramework>
+    <AssemblyName>PDX_Mod_Loader</AssemblyName>
+    <Description>My first plugin</Description>
+    <Version>1.0.0</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <RestoreAdditionalProjectSources>
+      https://api.nuget.org/v3/index.json;
+      https://nuget.bepinex.dev/v3/index.json;
+      https://nuget.samboy.dev/v3/index.json
+    </RestoreAdditionalProjectSources>
+    <RootNamespace>PDX_Mod_Loader</RootNamespace>
+  </PropertyGroup>
+	<PropertyGroup>
+		<Cities2_Location>C:\Program Files (x86)\Steam\steamapps\common\Cities Skylines II</Cities2_Location>
+		<AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
+	</PropertyGroup>
+	<ItemGroup>
+	  <Compile Remove="publicized_assemblies\**" />
+	  <EmbeddedResource Remove="publicized_assemblies\**" />
+	  <None Remove="publicized_assemblies\**" />
+	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
+    <PackageReference Include="BepInEx.Core" Version="5.*" />
+    <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
+    <PackageReference Include="UnityEngine.Modules" Version="2022.3.7" IncludeAssets="compile" />
+  </ItemGroup>
+	
+  <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Reference Include="Cinemachine">
+      <HintPath>stripped\Cinemachine-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="cohtml.Net">
+      <HintPath>stripped\cohtml.Net-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Cohtml.RenderingBackend">
+      <HintPath>stripped\Cohtml.RenderingBackend-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Cohtml.Runtime">
+      <HintPath>stripped\Cohtml.Runtime-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.AssetPipeline">
+      <HintPath>stripped\Colossal.AssetPipeline-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.AssetPipeline.Native">
+      <HintPath>stripped\Colossal.AssetPipeline.Native-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.ATL">
+      <HintPath>stripped\Colossal.ATL-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.CharacterSystem">
+      <HintPath>stripped\Colossal.CharacterSystem-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.Collections">
+      <HintPath>stripped\Colossal.Collections-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.Core">
+      <HintPath>stripped\Colossal.Core-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.IO">
+      <HintPath>stripped\Colossal.IO-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.IO.AssetDatabase">
+      <HintPath>stripped\Colossal.IO.AssetDatabase-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.Localization">
+      <HintPath>stripped\Colossal.Localization-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.Logging">
+      <HintPath>stripped\Colossal.Logging-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.Mathematics">
+      <HintPath>stripped\Colossal.Mathematics-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.Mono.Cecil">
+      <HintPath>stripped\Colossal.Mono.Cecil-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.OdinSerializer">
+      <HintPath>stripped\Colossal.OdinSerializer-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.Plugins">
+      <HintPath>stripped\Colossal.Plugins-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.PSI.Common">
+      <HintPath>stripped\Colossal.PSI.Common-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.PSI.Discord">
+      <HintPath>stripped\Colossal.PSI.Discord-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.PSI.PdxSdk">
+      <HintPath>stripped\Colossal.PSI.PdxSdk-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.PSI.Steamworks">
+      <HintPath>stripped\Colossal.PSI.Steamworks-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.UI">
+      <HintPath>stripped\Colossal.UI-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Colossal.UI.Binding">
+      <HintPath>stripped\Colossal.UI.Binding-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="com.rlabrecque.steamworks.net">
+      <HintPath>stripped\com.rlabrecque.steamworks.net-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="DiscordSDK">
+      <HintPath>stripped\DiscordSDK-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="DryDock.Runtime">
+      <HintPath>stripped\DryDock.Runtime-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Elringus.UnityGoogleDrive.Runtime">
+      <HintPath>stripped\Elringus.UnityGoogleDrive.Runtime-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Game">
+      <HintPath>stripped\Game-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Game.ArtPipeline">
+      <HintPath>stripped\Game.ArtPipeline-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Game.TestScenarios">
+      <HintPath>stripped\Game.TestScenarios-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PDX.ModsUI">
+      <HintPath>stripped\PDX.ModsUI-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PDX.SDK">
+      <HintPath>stripped\PDX.SDK-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Entities">
+      <HintPath>stripped\Unity.Entities-nstrip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="if not exist &quot;$(Cities2_Location)\BepInEx\plugins\$(ProjectName)&quot; mkdir &quot;$(Cities2_Location)\BepInEx\plugins\$(ProjectName)&quot;&#xD;&#xA;copy /Y &quot;$(TargetDir)0Harmony.dll&quot; &quot;$(Cities2_Location)\BepInEx\plugins\$(ProjectName)\0Harmony.dll&quot;&#xD;&#xA;copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;$(Cities2_Location)\BepInEx\plugins\$(ProjectName)\$(ProjectName).dll&quot;" />
+	</Target>
+	<ItemGroup>
+	  <Reference Update="mscorlib">
+	    <Private>False</Private>
+	  </Reference>
+	</ItemGroup>
+	<ItemGroup>
+	  <Reference Update="System">
+	    <Private>False</Private>
+	  </Reference>
+	</ItemGroup>
+	<ItemGroup>
+	  <Reference Update="System.Core">
+	    <Private>False</Private>
+	  </Reference>
+	</ItemGroup>
+	<ItemGroup>
+	  <Reference Update="System.Data">
+	    <Private>False</Private>
+	  </Reference>
+	</ItemGroup>
+	<ItemGroup>
+	  <Reference Update="System.Drawing">
+	    <Private>False</Private>
+	  </Reference>
+	</ItemGroup>
+	<ItemGroup>
+	  <Reference Update="System.IO.Compression.FileSystem">
+	    <Private>False</Private>
+	  </Reference>
+	</ItemGroup>
+	<ItemGroup>
+	  <Reference Update="System.Numerics">
+	    <Private>False</Private>
+	  </Reference>
+	</ItemGroup>
+	<ItemGroup>
+	  <Reference Update="System.Runtime.Serialization">
+	    <Private>False</Private>
+	  </Reference>
+	</ItemGroup>
+	<ItemGroup>
+	  <Reference Update="System.Xml">
+	    <Private>False</Private>
+	  </Reference>
+	</ItemGroup>
+	<ItemGroup>
+	  <Reference Update="System.Xml.Linq">
+	    <Private>False</Private>
+	  </Reference>
+	</ItemGroup>
+</Project>
