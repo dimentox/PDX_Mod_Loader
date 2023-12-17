@@ -27,4 +27,4 @@ using System.Security.Permissions;
 ```
 
 
-You can now access any private, internal, or readonly types, methods, properties, fields, and events in the RoR2 assembly
+You can now access any private, internal, or readonly types, methods, properties, fields, and events in the cs2 assembly
