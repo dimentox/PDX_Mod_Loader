@@ -19,6 +19,7 @@ using Game.UI;
 using Game.UI.Localization;
 using Game.UI.Menu;
 using HarmonyLib;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
@@ -167,12 +168,17 @@ namespace PDX_Mod_Loader
         private void Instance_onGamePreload(Purpose purpose, GameMode mode)
         {
             Debug.LogWarningFormat("===>Instance_onGamePreload<=== **{0}** **{1}**", purpose, mode);
-            if (!ready)
+            if (!ready && purpose == Purpose.NewGame)
             {
-                StartWatching();
+              
                 ready = true;
 
             }
+            else
+            {
+               
+            }
+
          
         }
 
@@ -191,6 +197,7 @@ namespace PDX_Mod_Loader
             {
                 Debug.LogWarning("*****Loading a mod*****");
                 var mod = loaMod(pluginInfo);
+              
                 Debug.LogWarning("*****Loaded a mod*****");
                 if (mod != null && mod.ID != "")
                 {
@@ -226,19 +233,7 @@ namespace PDX_Mod_Loader
             {
                
                 Debug.LogWarning("*****INGAME*****");
-                Debug.LogWarning("*****PLUGINS COUNT*****");
-                Debug.LogWarning(Plugins.Count);
-                Debug.LogWarning("*****Making UpdateSystem*****");
-                var update = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<UpdateSystem>();
-
-                foreach (PDXMod pdxmod in Mods.Values)
-                {
-                    pdxmod.Mod.OnCreateWorld(update);
-                    Debug.LogWarningFormat("****Loaded {0}", pdxmod.ID);
-                }
-
-                Debug.LogWarning("****MODCOUNT*****");
-                Debug.LogWarning(Mods.Count);
+               
             }
         }
 
@@ -260,10 +255,24 @@ namespace PDX_Mod_Loader
                             if (!modFound)
                             {
                                 var mod = (IMod)Activator.CreateInstance(x);
+                               
+
+                               var burstedAssembly = Path.Combine(info.rootPath, info.assembly.GetName().Name, $"{info.assembly.GetName().Name}_win_x86_64.dll");      // Burst dll (assuming windows 64bit)
+                                Debug.LogWarningFormat("****Looking for {0}", burstedAssembly);
+                                if (File.Exists(burstedAssembly))
+                                {
+                                    Debug.LogWarningFormat("****Loading BUrst for {0}", burstedAssembly);
+                                    LoadAdditionalLibrary(burstedAssembly);
+                                }
+                               
                                 mod.OnLoad();
+                                mod.OnCreateWorld(World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<UpdateSystem>());
                                 manager = new SettingsManager(mod);
                                 pdxmod.SettingsManager = manager;
                                 pdxmod.Mod = mod;
+                                
+
+                            
                                 modFound = true;
                             }
                         }
@@ -274,10 +283,7 @@ namespace PDX_Mod_Loader
                 Debug.LogError(ex.Message);
             }
 
-            if (!modFound)
-            {
-                throw new Exception("MOD NOT FOUND");
-            }
+          
             return pdxmod;
         }
 
