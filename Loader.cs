@@ -2,33 +2,18 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using BepInEx;
-using Colossal.AssetPipeline;
-using Colossal.IO.AssetDatabase;
-using Colossal.IO.AssetDatabase.Internal;
-using Colossal.Json;
-using Colossal.Plugins;
+using System.Reflection;
 using Colossal.Serialization.Entities;
 using Game;
 using Game.Modding;
 using Game.SceneFlow;
-using Game.Settings;
-using Game.Simulation;
 using Game.UI;
 using Game.UI.Localization;
-using Game.UI.Menu;
 using HarmonyLib;
-using Unity.Collections.LowLevel.Unsafe;
+using Unity.Burst;
 using Unity.Entities;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 using static Game.Modding.ToolchainDeployment;
-using PluginInfo = Colossal.Plugins.PluginInfo;
-
-
-
-
 
 
 namespace PDX_Mod_Loader
@@ -37,280 +22,165 @@ namespace PDX_Mod_Loader
     [HarmonyPatch(typeof(GameManager), "CreateWorld")]
     public class GameManager_CreateSystems_Patch
     {
-        public static Wrapper wrapper;
-
         public static void Postfix(GameManager __instance)
         {
-            wrapper = new Wrapper();
-            if (wrapper != null)
+            Debug.LogWarning("---> Loading wrapper");
+
+            Debug.LogWarning("---> Loading wrapper init");
+            if (Plugin.Wrapper != null)
             {
-                if (wrapper.TestToolKit())
+                Debug.LogWarning("---> Loading wrapper testtoolkit");
+                if (Plugin.Wrapper.TestToolKit())
                 {
-                    wrapper.Init();
+                    Debug.LogWarning("---> calling wrapper init");
+                    Plugin.Wrapper.Init();
                 }
             }
-          
+            else
+            {
+                throw new Exception("NULL WRAPPER");
+            }
         }
     }
 
-    public class SettingsManager : ModSetting
-    {
-        public override void SetDefaults()
-        {
-          
-        }
-        public override AutomaticSettings.SettingPageData GetPageData(string id, bool addPrefix)
-        {
-            return AutomaticSettings.FillSettingsPage(this, id, addPrefix);
-        }
-        //private static bool RegisterInOptionsUI(Setting instance, string name, bool addPrefix)
-        //{
-        //    World defaultGameObjectInjectionWorld = World.DefaultGameObjectInjectionWorld;
-        //    OptionsUISystem optionsUISystem = ((defaultGameObjectInjectionWorld != null) ? defaultGameObjectInjectionWorld.GetOrCreateSystemManaged<OptionsUISystem>() : null);
-        //    if (optionsUISystem != null)
-        //    {
-        //        optionsUISystem.RegisterSetting(instance, name, addPrefix);
-        //        return true;
-        //    }
-        //    return false;
-        //}
 
-        public SettingsManager(IMod mod) : base(mod)
-        {
-          
-           Type type = mod.GetType();
-           Debug.LogWarningFormat("*****LOADED SETTINGS ***** {0}", mod);
-          // AssetDatabase.global.LoadSettings("Editor Settings", this.editor, new EditorSettings());
-            //SettingsManager.RegisterInOptionsUI(this, nameof(mod), false);
-
-
-            //this.id = string.Concat(new string[]
-            //{
-            //    type.Assembly.GetName().Name,
-            //    ".",
-            //    type.Namespace,
-            //    ".",
-            //    type.Name
-            //});
-        }
-
-        
-    }
     public class Wrapper
     {
-        public MyPluginManager managerTest;
+        public static PluginManager managerTest;
+        public bool loaded;
 
         public bool TestToolKit()
         {
-            if (Game.Modding.ToolchainDeployment.currentState == DeploymentState.NotInstalled || Game.Modding.ToolchainDeployment.currentState == DeploymentState.Outdated)
+            if (currentState == DeploymentState.NotInstalled || currentState == DeploymentState.Outdated)
             {
-                Game.Modding.ToolchainDeployment.RunWithUI();
-                GameManager.instance.userInterface.appBindings.ShowConfirmationDialog(new ConfirmationDialog("Common.DIALOG_TITLE[Warning]", "This will Take some time and unity will open and when its done it will close! Do not exit the application. Just wait!", "Common.DIALOG_ACTION[Yes]", "I like turtles!", Array.Empty<LocalizedString>()), delegate (int msg)
-                {
-                   
-                });
+                RunWithUI();
+                GameManager.instance.userInterface.appBindings.ShowConfirmationDialog(
+                    new ConfirmationDialog("Common.DIALOG_TITLE[Warning]",
+                        "This will Take some time and unity will open and when its done it will close! Do not exit the application. Just wait!",
+                        "Common.DIALOG_ACTION[Yes]", "I like turtles!", Array.Empty<LocalizedString>()), delegate { });
                 return false;
             }
 
             return true;
         }
 
-        public void Start()
-        {
-           
-        }
 
         public void Init()
         {
-            Debug.LogWarning("*****LOADED MANAGER *****");
-            managerTest =
-                new MyPluginManager(
-                    Directory.CreateDirectory(Path.Combine(Application.persistentDataPath, "Mods")).FullName,
-                    typeof(IMod));
-        }
-    }
-
-    public class PDXMod
-    {
-        public string ID { get; set; }
-        public IMod Mod { get; set; }
-        public SettingsManager SettingsManager { get; set; }
-
-        public PDXMod()
-        {
-            
-        }
-
-        public PDXMod(IMod mod, SettingsManager manager)
-        {
-            this.Mod = mod;
-            this.SettingsManager = manager;
-            this.ID = nameof(mod);
-            AssetDatabase.global.LoadSettings("ModSettings", this.SettingsManager, new SettingsManager(mod));
-            this.SettingsManager.RegisterInOptionsUI();
-        }
-        private readonly List<Setting> m_Settings = new List<Setting>();
-    }
-    public class MyPluginManager : PluginManager
-    {
-        public Dictionary<string,PDXMod> Mods = new();
-        public List<PluginInfo> Plugins = new();
-        public bool ready { get; set; }
-        public MyPluginManager(string rootPath, params Type[] types) : base(rootPath, types)
-        {
-          
             GameManager.instance.onGameLoadingComplete += OnGameLoadingComplete;
-            GameManager.instance.onGamePreload += Instance_onGamePreload;
-            ready = false;
+            Debug.LogWarning("*****PRE LOADED MANAGER *****");
+            var path = Directory.CreateDirectory(Path.Combine(Application.persistentDataPath, "Mods")).FullName;
+            Debug.LogWarning($"*****LOADED MANAGER *****{path}");
 
+            managerTest =
+                new PluginManager(path);
         }
 
-        private void Instance_onGamePreload(Purpose purpose, GameMode mode)
-        {
-            Debug.LogWarningFormat("===>Instance_onGamePreload<=== **{0}** **{1}**", purpose, mode);
-            if (!ready && purpose == Purpose.NewGame)
-            {
-              
-                ready = true;
-
-            }
-            else
-            {
-               
-            }
-
-         
-        }
-
-        public event Action<PluginInfo> PluginLoaded;
-        public event Action<PluginInfo> PluginUnloaded;
-        public event Action OnDispose;
-
-        public void Start()
-        {
-           
-        }
-
-        private void loadmods()
-        {
-            foreach (var pluginInfo in Plugins)
-            {
-                Debug.LogWarning("*****Loading a mod*****");
-                var mod = loaMod(pluginInfo);
-              
-                Debug.LogWarning("*****Loaded a mod*****");
-                if (mod != null && mod.ID != "")
-                {
-
-                    
-                    Mods.Add(pluginInfo.assembly.FullName, mod);
-                }
-            }
-
-            var assets = AssetDatabase.user.GetAssets<Colossal.IO.AssetDatabase.SettingAsset>();
-            assets.ForEach(x =>
-            {
-               
-            });
-            
-
-        }
         private void OnGameLoadingComplete(Purpose purpose, GameMode mode)
         {
-            Debug.LogWarningFormat("===>OnGameLoadingComplete<=== **{0}** **{1}**", purpose, mode);
-            Debug.LogWarning("****GAMELOADING COMPLETE*****");
-            if (purpose == Purpose.Cleanup && mode == GameMode.MainMenu)
+            Debug.LogWarningFormat("===>Instance_onGameLoad<=== **{0}** **{1}**", purpose, mode);
+            if (purpose == Purpose.Cleanup && mode == GameMode.MainMenu && loaded == false)
             {
-     
-                loadmods();
+                loaded = true;
+                managerTest.LoadPlugins();
+                managerTest.WorldCreated();
             }
-            if (mode == GameMode.MainMenu)
-            {
-                Debug.LogWarning("*****INMENU*****");
-               
-            }
-            else if (mode == GameMode.Game)
-            {
-               
-                Debug.LogWarning("*****INGAME*****");
-               
-            }
-        }
-
-        private PDXMod loaMod(PluginInfo info)
-        {
-            var tmods = new List<IMod>();
-            SettingsManager manager;
-            var pdxmod = new PDXMod();
-            bool modFound = false;
-            try
-            {
-                var assem = info.assembly;
-
-                info.assembly.GetTypes()
-                    .Where(t => t != typeof(IMod) && typeof(IMod).IsAssignableFrom(t))
-                    .ToList()
-                    .ForEach(x =>
-                        {
-                            if (!modFound)
-                            {
-                                var mod = (IMod)Activator.CreateInstance(x);
-                               
-
-                               var burstedAssembly = Path.Combine(info.rootPath, info.assembly.GetName().Name, $"{info.assembly.GetName().Name}_win_x86_64.dll");      // Burst dll (assuming windows 64bit)
-                                Debug.LogWarningFormat("****Looking for {0}", burstedAssembly);
-                                if (File.Exists(burstedAssembly))
-                                {
-                                    Debug.LogWarningFormat("****Loading BUrst for {0}", burstedAssembly);
-                                    LoadAdditionalLibrary(burstedAssembly);
-                                }
-                               
-                                mod.OnLoad();
-                                mod.OnCreateWorld(World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<UpdateSystem>());
-                                manager = new SettingsManager(mod);
-                                pdxmod.SettingsManager = manager;
-                                pdxmod.Mod = mod;
-                                
-
-                            
-                                modFound = true;
-                            }
-                        }
-                    );
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError(ex.Message);
-            }
-
-          
-            return pdxmod;
-        }
-
-        public override void OnPluginLoaded(PluginInfo info)
-        {
-            base.OnPluginLoaded(info);
-            Debug.LogWarning(("*****LOADED PLUGIN {0}*****", info.assemblyPath));
-            PluginLoaded?.Invoke(info);
-            Plugins.Add(info);
-           
-
-        }
-
-        private void Dispose()
-        {
-            var OnOnDispose = OnDispose;
-            if (OnOnDispose != null) OnOnDispose();
-
-            base.Dispose();
-            PluginLoaded = null;
-            PluginUnloaded = null;
-        }
-
-        public override void OnPluginUnloaded(PluginInfo info)
-        {
-            base.OnPluginUnloaded(info);
-            PluginUnloaded?.Invoke(info);
         }
     }
+
+
+    public class PluginManager : GameSystemBase
+    {
+        public bool modsEnabled = true;
+        private List<IMod> plugins;
+
+        public PluginManager(string path)
+        {
+            this.path = path;
+            Debug.LogWarning($"*****CTOR {path} ****");
+        }
+
+        public string path { get; set; }
+
+        public void LoadPlugins()
+        {
+            plugins = new List<IMod>();
+            Debug.LogWarning("*****Loading plugis ****");
+            // If mods are disabled, early out - this allows us to disable mods, enter Play Mode, exit Play Mode
+            //and be sure that the managed assemblies have been unloaded (assuming DomainReload occurs)
+            if (!modsEnabled)
+                return;
+
+            var folder = path; //Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Mods"));
+            if (Directory.Exists(folder))
+            {
+                Debug.LogWarning($"*****Loading {folder} ****");
+                var modfolders = Directory.GetDirectories(folder);
+                Debug.LogWarning($"*****MODS {modfolders} ****");
+                foreach (var modfolder in modfolders)
+                {
+
+                    Debug.LogWarning($"*****Loading {modfolder} ****");
+                    var mods = Directory.GetDirectories(modfolder);
+                    Debug.LogWarning($"*****MODS {mods} ****");
+                    foreach (var mod in mods)
+                    {
+                        Debug.LogWarning($"*****Loading {mod} ****");
+                        var modName = Path.GetFileName(mod);
+                        var monoAssembly = Path.Combine(mod, $"{modName}.dll");
+                        Debug.LogWarning($"*****Loading {modName} {monoAssembly} ****");
+                        if (File.Exists(monoAssembly))
+                        {
+                            Debug.LogWarning($"*****Loading plugin *****{modName}");
+                            var managedPlugin = Assembly.LoadFile(monoAssembly);
+                            Debug.LogWarning($"*****Loading plugin *****{monoAssembly}");
+                            // var pluginModule = managedPlugin.GetType("IMod");
+                            //Debug.LogWarning($"*****Loading plugin *****{pluginModule}");
+                            //var plugin = (IMod)Activator.CreateInstance(pluginModule);
+                            bool modFound = false;
+                            managedPlugin.GetTypes()
+                                .Where(t => t != typeof(IMod) && typeof(IMod).IsAssignableFrom(t))
+                                .ToList()
+                                .ForEach(x =>
+                                {
+                                    if (!modFound)
+                                    {
+                                        var plugin = (IMod)Activator.CreateInstance(x);
+                                        plugins.Add(plugin);
+                                        var burstedAssembly =
+                                            Path.Combine(mod,
+                                                $"{modName}_win_x86_64.dll"); // Burst dll (assuming windows 64bit)
+                                        if (File.Exists(burstedAssembly))
+                                        {
+                                            Debug.LogWarning($"*****Loading plugin Burst *****{burstedAssembly}");
+                                            BurstRuntime.LoadAdditionalLibrary(burstedAssembly);
+                                        }
+                                    }
+
+                                });
+                        }
+                    }
+                }
+            }
+            foreach (var plugin in plugins) plugin.OnLoad();
+
+        }
+
+        // Update is called once per frame
+        public void WorldCreated()
+        {
+            foreach (var plugin in plugins)
+            {
+                Debug.LogWarning($"Calling OnWorldCreated {plugin}");
+                plugin.OnCreateWorld(World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<UpdateSystem>());
+            }
+        }
+
+        public override void OnUpdate()
+        {
+           
+        }
+    }
+
+
 }
